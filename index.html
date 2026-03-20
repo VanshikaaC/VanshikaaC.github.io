@@ -1,655 +1,1013 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Fruit Ninja – Cute Edition</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Popularity Isn't Written</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:#fdfaf5;
+  color:#1e1b17;
+  font-family:'Source Serif 4',Georgia,serif;
+  font-weight:300;
+  overflow-x:hidden;
+}
+:root{
+  --bg:#fdfaf5;
+  --bg2:#f5f0e6;
+  --surface:#ece7dc;
+  --ink:#1e1b17;
+  --mid:#5c5650;
+  --faint:#9e9488;
+  --rule:rgba(30,27,23,0.1);
+  --rule-soft:rgba(30,27,23,0.05);
 
-    body {
-      width: 100%; height: 100vh;
-      background: linear-gradient(160deg, #1a0533 0%, #0d1b4b 40%, #0a3320 100%);
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;
-      overflow: hidden; user-select: none; touch-action: none;
-    }
+  --yellow:#b8820a;
+  --filmtv:#b8820a;
+  --booktok:#c0304e;
+  --award:#6040b8;
+  --bestseller:#187a4a;
+  --canon:#a84e12;
 
-    #game {
-      position: relative;
-      width: min(420px, 100vw);
-      height: min(680px, 100vh);
-      overflow: hidden;
-      border-radius: 24px;
-      background: linear-gradient(180deg, #0f0428 0%, #1a0a3d 50%, #0c2010 100%);
-      box-shadow: 0 0 60px #7c3aed55, 0 0 120px #7c3aed22, inset 0 0 40px #00000044;
-      border: 1px solid #7c3aed44;
-      cursor: none;
-    }
+  --fantasy:#6840b8;
+  --ya:#c0304e;
+  --scifi:#2060b8;
+  --thriller:#a87818;
+  --romance:#b03868;
+  --fiction:#187a60;
+  --selfhelp:#a84e12;
+  --hist:#187a60;
 
-    /* ── Stars ── */
-    .star {
-      position: absolute;
-      border-radius: 50%;
-      background: white;
-      animation: twinkle var(--dur) infinite alternate;
-    }
+  --ar-superstar:#b8820a;
+  --ar-growing:#a84e12;
+  --ar-established:#2060b8;
+}
 
-    /* ── Fruit / Bomb item ── */
-    .item {
-      position: absolute;
-      display: flex; align-items: center; justify-content: center;
-      pointer-events: none;
-      will-change: transform, opacity;
-      line-height: 1;
-    }
-    .slice-line {
-      position: absolute;
-      width: 100%; height: 2px;
-      background: rgba(255,255,255,0.9);
-      top: 50%; left: 0;
-      transform: rotate(-30deg);
-      box-shadow: 0 0 8px white;
-    }
+/* ── TOOLTIP ── */
+#tip{
+  position:fixed;pointer-events:none;z-index:9999;
+  background:#fff;border:1px solid rgba(30,27,23,0.12);
+  box-shadow:0 6px 20px rgba(30,27,23,0.07);
+  padding:12px 16px;max-width:260px;
+  font-family:'DM Mono',monospace;font-size:11px;line-height:1.75;
+  color:var(--mid);opacity:0;transition:opacity .14s;
+}
+#tip.on{opacity:1}
+#tip strong{color:var(--ink);font-weight:400;display:block;margin-bottom:4px;font-size:12.5px}
 
-    /* ── Particle ── */
-    .particle {
-      position: absolute;
-      font-size: 20px;
-      pointer-events: none;
-      will-change: transform, opacity;
-    }
+/* ── HERO ── */
+#hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;padding:0;
+  position:relative;overflow:hidden;
+  background:var(--bg2);
+}
+.h-inner{position:relative;max-width:820px;margin:0 auto;padding:0 52px;text-align:center}
+.h-kicker{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:28px;
+}
+h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(3.2rem,7.5vw,7rem);
+  font-weight:900;line-height:.96;letter-spacing:-.03em;
+  color:var(--ink);margin-bottom:18px;
+}
+h1 em{font-style:italic;color:var(--mid)}
+.h-sub{
+  font-size:clamp(1rem,1.6vw,1.15rem);color:var(--mid);
+  font-style:italic;font-weight:300;max-width:440px;
+  line-height:1.62;margin-bottom:48px;margin-left:auto;margin-right:auto;
+}
+.h-scrl{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--faint);
+}
 
-    /* ── Score popup ── */
-    .score-popup {
-      position: absolute;
-      font-weight: 900;
-      pointer-events: none;
-      white-space: nowrap;
-      z-index: 30;
-      will-change: transform, opacity;
-    }
+.h-scrl-line{
+  width:36px;height:1px;
+  background:linear-gradient(to right,transparent,var(--faint));
+}
+.h-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(30,27,23,0.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,27,23,0.055) 1px,transparent 1px);
+  background-size:72px 72px;
+  animation:gshift 28s linear infinite;
+}
+@keyframes gshift{from{background-position:0 0}to{background-position:72px 72px}}
+.h-vline{position:absolute;top:0;left:50%;width:1px;height:100%;background:rgba(30,27,23,0.07)}
+.section{
+  max-width:1100px;margin:0 auto;
+  padding:60px 52px;
+}
+.section.wide{max-width:1200px}
 
-    /* ── Slice SVG trail ── */
-    #slice-svg {
-      position: absolute; inset: 0;
-      pointer-events: none; z-index: 10;
-      width: 100%; height: 100%;
-    }
+/* top text block */
+.prose-block{
+  max-width:660px;
+  margin-bottom:36px;
+}
+.prose-block.center{margin:0 auto 60px;text-align:center}
 
-    /* ── HUD ── */
-    #hud {
-      position: absolute; top: 16px; left: 16px; right: 16px;
-      display: flex; justify-content: space-between; align-items: center;
-      z-index: 20;
-    }
-    #score-box {
-      background: rgba(0,0,0,0.5);
-      border-radius: 14px; padding: 6px 14px;
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    #score-label { color: #ffd93d; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
-    #score-value { color: white; font-size: 28px; font-weight: 900; line-height: 1; }
-    #lives-display { font-size: 22px; letter-spacing: 2px; }
+/* ── FULL GRAPH BLOCK ── */
+.graph-block{
+  width:100%;
+  background:#fff;
+  border:1px solid rgba(30,27,23,0.09);
+  padding:28px 36px 24px;
+  margin-bottom:32px;
+}
 
-    #combo-banner {
-      position: absolute; top: 90px; left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, #f093fb, #f5576c);
-      border-radius: 20px; padding: 4px 18px;
-      color: white; font-weight: 900; font-size: 18px;
-      box-shadow: 0 0 20px #f5576c88;
-      z-index: 20; white-space: nowrap;
-      display: none;
-      animation: comboFlash 0.3s ease;
-    }
+/* ── PROSE ── */
+.lbl{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.lbl::after{content:'';width:36px;height:1px;background:var(--rule-soft)}
+h2{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.6rem,3vw,2.5rem);
+  font-weight:700;line-height:1.15;letter-spacing:-.015em;
+  color:var(--ink);margin-bottom:18px;
+}
+h2 em{font-style:italic;color:var(--mid)}
+.bd{
+  font-size:clamp(.93rem,1.3vw,1.03rem);
+  line-height:1.9;color:var(--mid);font-weight:300;
+}
+.bd p{margin-bottom:.95em}.bd p:last-child{margin-bottom:0}
+.ins{
+  margin-top:20px;padding:14px 20px;
+  border-left:2px solid rgba(30,27,23,0.12);
+  font-size:.88rem;line-height:1.75;
+  color:var(--faint);font-style:italic;
+}
+.ins strong{
+  font-style:normal;font-weight:400;
+  color:var(--ink);display:block;
+  margin-bottom:4px;font-size:.92rem;
+}
 
-    /* ── Screens ── */
-    .screen {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 24px; z-index: 50;
-    }
+/* ── DIVIDER ── */
+.hr{height:1px;background:var(--rule-soft);margin:0 auto;max-width:1100px}
 
-    #menu-screen {}
-    #gameover-screen {
-      background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(4px);
-      display: none;
-    }
+/* ── LEGEND ── */
+.leg{
+  display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;
+  font-family:'DM Mono',monospace;font-size:10.5px;
+  color:var(--mid);letter-spacing:.03em;
+}
+.li{display:flex;align-items:center;gap:6px}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
-    .title-icon { font-size: 60px; margin-bottom: 4px; animation: bounce 2s infinite; }
-    .title-text {
-      font-size: 38px; font-weight: 900; color: white;
-      text-shadow: 0 0 30px #7c3aed, 0 0 60px #7c3aed88;
-      letter-spacing: -1px; line-height: 1.1;
-    }
-    .title-sub { color: #a78bfa; font-size: 14px; margin-top: 6px; letter-spacing: 3px; }
+/* ── BUTTONS ── */
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.btn{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:.09em;text-transform:uppercase;
+  padding:7px 14px;background:transparent;cursor:pointer;
+  border:1px solid rgba(30,27,23,0.18);color:var(--faint);
+  transition:all .2s;
+}
+.btn:hover{background:var(--surface);color:var(--ink);border-color:rgba(30,27,23,0.3)}
+.btn.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
-    #highscore-badge {
-      background: rgba(255,215,0,0.15);
-      border: 1px solid #ffd93d44;
-      border-radius: 14px; padding: 8px 24px;
-      color: #ffd93d; font-size: 14px; font-weight: 700;
-      display: none;
-    }
-    .instructions {
-      color: rgba(255,255,255,0.5); font-size: 13px;
-      text-align: center; line-height: 1.7;
-    }
+/* ── CLICK HINT ── */
+.chint{
+  display:flex;align-items:center;gap:8px;margin-top:14px;
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--faint);
+}
+.cpulse{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--faint);
+  animation:cp 1.9s ease-in-out infinite;
+}
+@keyframes cp{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.6)}}
 
-    .btn-play {
-      background: linear-gradient(135deg, #7c3aed, #a855f7);
-      border: none; border-radius: 20px; padding: 16px 48px;
-      color: white; font-size: 20px; font-weight: 900;
-      cursor: pointer;
-      box-shadow: 0 0 30px #7c3aed88, 0 8px 20px rgba(0,0,0,0.3);
-      animation: shimmer 2s infinite;
-      letter-spacing: 1px;
-      font-family: inherit;
-    }
-    .btn-retry {
-      background: linear-gradient(135deg, #f093fb, #f5576c);
-      border: none; border-radius: 20px; padding: 14px 44px;
-      color: white; font-size: 18px; font-weight: 900;
-      cursor: pointer;
-      box-shadow: 0 0 24px #f5576c88;
-      letter-spacing: 1px;
-      font-family: inherit;
-    }
-    .btn-menu {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 14px; padding: 10px 32px;
-      color: rgba(255,255,255,0.6); font-size: 14px;
-      cursor: pointer; font-family: inherit;
-    }
+/* ── VIZ TITLE ── */
+.vt{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:14px;
+}
+.viz{width:100%;overflow:visible;display:block}
 
-    .gameover-icon { font-size: 56px; animation: bounce 1s infinite; }
-    .gameover-title {
-      font-size: 34px; font-weight: 900; color: white;
-      text-shadow: 0 0 20px #f5576c;
-    }
-    .score-panel {
-      background: rgba(255,255,255,0.08);
-      border-radius: 20px; padding: 20px 40px;
-      text-align: center;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .score-panel-label { color: #a78bfa; font-size: 12px; letter-spacing: 3px; font-weight: 700; }
-    #final-score { color: white; font-size: 52px; font-weight: 900; line-height: 1.1; }
-    #new-best { color: #ffd93d; font-size: 13px; margin-top: 4px; font-weight: 700; display: none; }
-    #best-hint { color: rgba(255,215,0,0.55); font-size: 12px; margin-top: 4px; display: none; }
+/* ── END ── */
+#end{
+  min-height:100vh;display:flex;align-items:center;
+  justify-content:center;text-align:center;
+  padding:80px 40px;background:var(--bg2);
+  position:relative;overflow:hidden;
+}
+.endbg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 50%,rgba(30,27,23,.03) 0%,transparent 70%);
+}
+.endq{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.8rem,4vw,3.2rem);
+  font-weight:700;line-height:1.25;letter-spacing:-.02em;
+  color:var(--ink);margin-bottom:22px;position:relative;
+}
+.endq em{font-style:italic;color:var(--mid)}
+.ends{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--faint);position:relative;
+}
 
-    /* ── Keyframes ── */
-    @keyframes twinkle { from { opacity: 0.2; } to { opacity: 0.9; } }
-    @keyframes bounce  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-    @keyframes shimmer { 0%,100%{opacity:0.7} 50%{opacity:1} }
-    @keyframes comboFlash { 0%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-50%) scale(1.3)} 100%{transform:translateX(-50%) scale(1)} }
-  </style>
+@media(max-width:900px){
+  .section{padding:72px 28px}
+  .graph-block{padding:28px 20px}
+}
+</style>
 </head>
 <body>
 
-<div id="game">
+<div id="tip"><strong id="tn"></strong><span id="tb"></span></div>
 
-  <!-- Stars (generated by JS) -->
-
-  <!-- Slice SVG trail -->
-  <svg id="slice-svg">
-    <defs>
-      <linearGradient id="sliceGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="#fff" stop-opacity="0"/>
-        <stop offset="100%" stop-color="#fff" stop-opacity="0.9"/>
-      </linearGradient>
-    </defs>
-    <path id="slice-path" fill="none" stroke="url(#sliceGrad)"
-          stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
-          style="filter:drop-shadow(0 0 6px #ffffffaa)"/>
-  </svg>
-
-  <!-- HUD -->
-  <div id="hud" style="display:none">
-    <div id="score-box">
-      <div id="score-label">SCORE</div>
-      <div id="score-value">0</div>
-    </div>
-    <div id="lives-display">❤️ ❤️ ❤️</div>
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<section id="hero">
+  <div class="h-grid"></div>
+  <div class="h-vline"></div>
+  <div class="h-inner">
+    <div class="h-kicker">A data essay on books &amp; what makes them visible</div>
+    <h1>Popularity<br>Isn't <em>Written</em></h1>
+    <p class="h-sub">It's produced by films, fandoms, and the internet</p>
+    <div class="h-scrl"><div class="h-scrl-line"></div>scroll to read</div>
   </div>
-  <div id="combo-banner">✨ 1x COMBO!</div>
+</section>
 
-  <!-- Menu Screen -->
-  <div id="menu-screen" class="screen">
-    <div style="text-align:center">
-      <div class="title-icon">🍉🔪🍊</div>
-      <div class="title-text">Fruit Ninja</div>
-      <div class="title-sub">CUTE EDITION ✨</div>
+<!-- ═══════════════════════════ S1 — DOT GRID (full width) ═══════════════════════════ -->
+<section class="section" id="s1">
+
+  <div class="prose-block">
+    <div class="lbl">Context</div>
+    <h2>Most books feel like they arrive <em>fully formed</em></h2>
+    <div class="bd">
+      <p>Published, marketed, instantly popular. But looking back at my own collection, only a handful were chosen deliberately. The rest? I stumbled upon them — through a reel, a recommendation, a movie, a moment.</p>
+      <p>That made me wonder: how many of the books we read become popular because of what's inside them — and how many because of everything around them?</p>
     </div>
-    <div id="highscore-badge">🏆 Best: <span id="hs-value">0</span></div>
-    <div class="instructions">
-      Swipe to slice fruits 🍓<br>
-      Avoid bombs 💣<br>
-      Don't miss fruits ❤️
-    </div>
-    <button class="btn-play" id="btn-play">PLAY 🎮</button>
   </div>
 
-  <!-- Game Over Screen -->
-  <div id="gameover-screen" class="screen">
-    <div class="gameover-icon">😵</div>
-    <div class="gameover-title">Game Over!</div>
-    <div class="score-panel">
-      <div class="score-panel-label">YOUR SCORE</div>
-      <div id="final-score">0</div>
-      <div id="new-best">🏆 NEW BEST!</div>
-      <div id="best-hint">Best: <span id="best-hint-val">0</span></div>
+  <div class="graph-block">
+    <div class="vt">30 books</div>
+    <svg id="svg1" class="viz" viewBox="0 0 960 220"></svg>
+    <div id="hint1" style="display:none"></div>
+    <div id="leg1" style="max-height:0;overflow:hidden;opacity:0;margin-top:0;transition:max-height .6s ease,opacity .5s ease,margin-top .4s ease">
+      <div style="display:flex;align-items:stretch;gap:0;margin-bottom:20px">
+        <!-- 19 exposure bar -->
+        <div style="flex:19;background:#b8820a;opacity:0.88;border-radius:3px 0 0 3px;min-height:6px"></div>
+        <!-- 11 quiet bar -->
+        <div style="flex:11;background:rgba(30,27,23,0.13);border-radius:0 3px 3px 0;min-height:6px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;line-height:1;color:#b8820a;letter-spacing:-0.03em">19</span>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#b8820a;line-height:1.55">reached through<br>exposure<br><span style="opacity:0.6;font-size:9px">Film / TV · BookTok</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+            <div class="ld" style="width:9px;height:9px;border-radius:50%;background:rgba(30,27,23,0.18);border:1px solid rgba(30,27,23,0.25);flex-shrink:0;margin-left:2px"></div>
+            <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--faint);letter-spacing:0.05em">11 via Bestseller · Award · Canon</span>
+          </div>
+        </div>
+        <div class="ins" style="max-width:320px;margin:0;border-left:2px solid rgba(30,27,23,0.10)">
+          <strong>"What feels like choice is often exposure."</strong>
+          Of the 30 books in this study, more than half were surfaced by a film, a trend, or a platform — not by the writing alone.
+        </div>
+      </div>
     </div>
-    <button class="btn-retry" id="btn-retry">TRY AGAIN 🔄</button>
-    <button class="btn-menu" id="btn-menu">Menu</button>
+    <div id="ins1" style="display:none"></div>
   </div>
 
-</div>
+</section>
+
+<div class="hr"></div>
+
+<!-- ═══════════════════════════ S2 — DROP CHART (full width) ═══════════════════════════ -->
+<section class="section" id="s2">
+
+  <div class="prose-block">
+    <div class="lbl">Disruption</div>
+    <h2>Most books don't peak<br>when they're <em>released</em></h2>
+    <div class="bd">
+      <p>So I plotted when these books were published and when they actually became popular. The result wasn't a straight line — it was a stretch. Books drifting through time before suddenly rising.</p>
+      <p>The dots rest at their publication year — the assumption that published means popular. Press <em>drop</em> to watch them fall to where they actually peaked.</p>
+    </div>
+  </div>
+
+  <div class="graph-block">
+    <div class="vt">x — publication year &nbsp;·&nbsp; y — years to peak</div>
+    <svg id="svg2" class="viz" viewBox="0 0 960 360"></svg>
+    <div class="btns" style="margin-top:20px">
+      <button class="btn on" id="b2a" onclick="s2go(1)">At publication</button>
+      <button class="btn" id="b2b" onclick="s2go(2)">Drop to peak</button>
+    </div>
+    <div class="ins">
+      <strong>"Books don't rise at release — they rise later."</strong>
+      The Hobbit waited 75 years. Dune, 56. Something external has to find them first.
+    </div>
+  </div>
+
+</section>
+
+<div class="hr"></div>
+
+<!-- ═══════════════════════════ S3 — LAYERED CHART (full width) ═══════════════════════════ -->
+<section class="section" id="s3">
+
+  <div class="prose-block">
+    <div class="lbl">Explanation</div>
+    <h2>That rise isn't random.<br>It's <em>triggered.</em></h2>
+    <div class="bd">
+      <p>Popularity doesn't just happen — something triggers it. Films. Trends. Series. The authors behind them. The same chart now carries meaning.</p>
+      <p>Layer one colors each dot by what drove it. Layer two reveals who was behind it.</p>
+    </div>
+  </div>
+
+  <div class="graph-block">
+    <div class="vt">same chart · new meaning</div>
+    <svg id="svg3" class="viz" viewBox="0 0 960 360"></svg>
+    <div class="btns" style="margin-top:20px">
+      <button class="btn on" id="b3a" onclick="s3go(0)">Base</button>
+      <button class="btn" id="b3b" onclick="s3go(1)">Color by source</button>
+      <button class="btn" id="b3c" onclick="s3go(2)">Author influence</button>
+    </div>
+    <div class="leg" id="leg3a" style="visibility:hidden;margin-top:12px">
+      <div class="li"><div class="ld" style="background:var(--filmtv)"></div>Film / TV</div>
+      <div class="li"><div class="ld" style="background:var(--booktok)"></div>BookTok</div>
+      <div class="li"><div class="ld" style="background:var(--award)"></div>Award</div>
+      <div class="li"><div class="ld" style="background:var(--bestseller)"></div>Bestseller</div>
+      <div class="li"><div class="ld" style="background:var(--canon)"></div>Canon</div>
+    </div>
+    <div class="leg" id="leg3b" style="visibility:hidden;margin-top:12px">
+      <div class="li"><div class="ld" style="background:var(--ar-superstar)"></div>Superstar author</div>
+      <div class="li"><div class="ld" style="background:var(--ar-growing)"></div>Growing author</div>
+      <div class="li"><div class="ld" style="background:var(--ar-established)"></div>Established author</div>
+    </div>
+    <div class="ins" id="ins3">
+      <strong>"Different forces create different paths to popularity."</strong>
+      No two books took the same road — but the roads are fewer than you'd think.
+    </div>
+  </div>
+
+</section>
+
+<div class="hr"></div>
+
+<!-- ═══════════════════════════ S4 — SYSTEM (full width) ═══════════════════════════ -->
+<section class="section wide" id="s4">
+
+  <div class="prose-block center">
+    <div class="lbl" style="justify-content:center">System</div>
+    <h2>Films and BookTok don't just amplify books —<br><em>they choose genres</em></h2>
+    <div class="bd">
+      <p>When Film/TV or BookTok drives a book's popularity, it almost always lands in the same handful of genres: Fantasy, YA, Thriller. The genres that don't fit that mold — Psychology, Self-help, Non-fiction — stay quiet culturally, but rise through awards, bestseller lists, and long-term canon.</p>
+    </div>
+  </div>
+
+  <div class="graph-block">
+    <svg id="svg4" class="viz" viewBox="0 0 960 420"></svg>
+  </div>
+
+  <div class="ins" style="max-width:620px;margin:0 auto">
+    <strong>"Cultural amplification has a genre preference."</strong>
+    Film/TV and BookTok almost exclusively push Fantasy, YA, and Thriller. Awards, Bestseller lists, and Canon spread across Psychology, Self-help, Sci-Fi — far more variety.
+  </div>
+
+</section>
+
+<div class="hr"></div>
+
+<!-- ═══════════════════════════ S5 — REFLECTION (full width) ═══════════════════════════ -->
+<section class="section" id="s5">
+
+  <div class="prose-block center">
+    <div class="lbl" style="justify-content:center">Reflection</div>
+    <h2>Books don't just become popular.<br><em>They're made visible.</em></h2>
+    <div class="bd">
+      <p>And as that visibility narrows, so do the kinds of stories we keep seeing. If popularity is shaped by systems, then reading isn't as neutral as it feels. The books we pick up aren't just chosen — they're surfaced.</p>
+      <p>Over time, those signals converge. Certain genres rise more often. Certain stories get repeated. A lot of times, what we read isn't just a choice — it's a pattern.</p>
+    </div>
+  </div>
+
+  <div class="ins" style="max-width:620px;margin:0 auto">
+    <strong>"Traditional routes spread wider. Cultural routes go deeper into fewer genres."</strong>
+    The traditional path surfaces Psychology, Self-help, Sci-Fi, and Thriller alongside fiction. The cultural path is dominated by Fantasy and YA — the same genres, over and over.
+  </div>
+
+</section>
+
+<!-- ═══════════════════════════ END ═══════════════════════════ -->
+<section id="end">
+  <div class="endbg"></div>
+  <div style="position:relative;max-width:600px">
+    <div class="endq">If popularity<br>is <em>guided,</em><br>then so is<br>our reading.</div>
+    <div class="ends">30 books &nbsp;·&nbsp; 5 observations &nbsp;·&nbsp; 1 pattern</div>
+  </div>
+</section>
 
 <script>
-// ─── Constants ───────────────────────────────────────────────────────────────
-const FRUITS = [
-  { emoji:"🍉", points:3, size:64 },
-  { emoji:"🍊", points:2, size:54 },
-  { emoji:"🍋", points:2, size:50 },
-  { emoji:"🍇", points:4, size:52 },
-  { emoji:"🍓", points:1, size:46 },
-  { emoji:"🍑", points:2, size:52 },
-  { emoji:"🍍", points:5, size:58 },
-  { emoji:"🥝", points:3, size:48 },
-  { emoji:"🍒", points:2, size:46 },
-  { emoji:"🥭", points:4, size:56 },
+/* ════════════════════════════════════════════
+   DATA
+════════════════════════════════════════════ */
+const B=[
+  {n:'Dune',a:'Frank Herbert',y:1965,g:'Science Fiction',vs:'Film/TV',ttp:56,ar:'Established'},
+  {n:'The Martian',a:'Andy Weir',y:2011,g:'Science Fiction',vs:'Film/TV',ttp:4,ar:'Established'},
+  {n:'Project Hail Mary',a:'Andy Weir',y:2021,g:'Science Fiction',vs:'Bestseller',ttp:0,ar:'Established'},
+  {n:'Foundation',a:'Isaac Asimov',y:1951,g:'Science Fiction',vs:'Award',ttp:15,ar:'Established'},
+  {n:'Neuromancer',a:'William Gibson',y:1984,g:'Science Fiction',vs:'Award',ttp:1,ar:'Established'},
+  {n:'Gone Girl',a:'Gillian Flynn',y:2012,g:'Thriller',vs:'Film/TV',ttp:2,ar:'Established'},
+  {n:'The Girl on the Train',a:'Paula Hawkins',y:2015,g:'Thriller',vs:'Film/TV',ttp:1,ar:'Established'},
+  {n:'The Silent Patient',a:'Alex Michaelides',y:2019,g:'Thriller',vs:'Bestseller',ttp:0,ar:'Established'},
+  {n:'It Ends with Us',a:'Colleen Hoover',y:2016,g:'Romance',vs:'BookTok',ttp:4,ar:'Superstar'},
+  {n:'It Starts with Us',a:'Colleen Hoover',y:2022,g:'Romance',vs:'BookTok',ttp:0,ar:'Superstar'},
+  {n:'Verity',a:'Colleen Hoover',y:2018,g:'Thriller',vs:'BookTok',ttp:2,ar:'Superstar'},
+  {n:'The Seven Husbands of Evelyn Hugo',a:'Taylor Jenkins Reid',y:2017,g:'Fiction',vs:'BookTok',ttp:3,ar:'Growing'},
+  {n:'The Song of Achilles',a:'Madeline Miller',y:2011,g:'Historical Fiction',vs:'BookTok',ttp:9,ar:'Growing'},
+  {n:'They Both Die at the End',a:'Adam Silvera',y:2017,g:'YA',vs:'BookTok',ttp:3,ar:'Growing'},
+  {n:'The Inheritance Games',a:'Jennifer Lynn Barnes',y:2020,g:'YA',vs:'Bestseller',ttp:0,ar:'Established'},
+  {n:'We Were Liars',a:'E. Lockhart',y:2014,g:'YA',vs:'BookTok',ttp:6,ar:'Growing'},
+  {n:'The Hunger Games',a:'Suzanne Collins',y:2008,g:'YA',vs:'Film/TV',ttp:4,ar:'Superstar'},
+  {n:'Catching Fire',a:'Suzanne Collins',y:2009,g:'YA',vs:'Film/TV',ttp:4,ar:'Superstar'},
+  {n:'Harry Potter and the Sorcerer\'s Stone',a:'J.K. Rowling',y:1997,g:'Fantasy',vs:'Film/TV',ttp:4,ar:'Superstar'},
+  {n:'A Game of Thrones',a:'George R.R. Martin',y:1996,g:'Fantasy',vs:'Film/TV',ttp:15,ar:'Superstar'},
+  {n:'The Hobbit',a:'J.R.R. Tolkien',y:1937,g:'Fantasy',vs:'Film/TV',ttp:75,ar:'Established'},
+  {n:'Mistborn',a:'Brandon Sanderson',y:2006,g:'Fantasy',vs:'Award',ttp:11,ar:'Established'},
+  {n:'Babel',a:'R.F. Kuang',y:2022,g:'Fantasy',vs:'Award',ttp:0,ar:'Established'},
+  {n:'Fourth Wing',a:'Rebecca Yarros',y:2023,g:'Fantasy',vs:'BookTok',ttp:2,ar:'Growing'},
+  {n:'Atomic Habits',a:'James Clear',y:2018,g:'Self-help',vs:'Canon',ttp:0,ar:'Established'},
+  {n:'The Subtle Art of Not Giving a F*ck',a:'Mark Manson',y:2016,g:'Self-help',vs:'Canon',ttp:0,ar:'Established'},
+  {n:'Thinking Fast and Slow',a:'Daniel Kahneman',y:2011,g:'Psychology',vs:'Award',ttp:0,ar:'Established'},
+  {n:'One of Us Is Lying',a:'Karen M. McManus',y:2017,g:'YA',vs:'BookTok',ttp:3,ar:'Established'},
+  {n:'The Fault in Our Stars',a:'John Green',y:2012,g:'YA',vs:'Film/TV',ttp:2,ar:'Established'},
+  {n:'The 7 Habits of Highly Effective People',a:'Stephen Covey',y:1989,g:'Self-help',vs:'Canon',ttp:0,ar:'Established'},
 ];
 
-const game     = document.getElementById('game');
-const hud      = document.getElementById('hud');
-const scoreVal = document.getElementById('score-value');
-const livesEl  = document.getElementById('lives-display');
-const comboBanner = document.getElementById('combo-banner');
-const slicePath   = document.getElementById('slice-path');
-const menuScreen  = document.getElementById('menu-screen');
-const goScreen    = document.getElementById('gameover-screen');
+/* Full 110-book dataset for S4 — sel:true marks the chosen 30 */
+const ALL_B=[
+  {n:'Dune',a:'Frank Herbert',y:1965,g:'Science Fiction',vs:'Film/TV',sel:true},
+  {n:'Dune Messiah',a:'Frank Herbert',y:1969,g:'Science Fiction',vs:'Canon',sel:false},
+  {n:'Children of Dune',a:'Frank Herbert',y:1976,g:'Science Fiction',vs:'Canon',sel:false},
+  {n:'The Martian',a:'Andy Weir',y:2011,g:'Science Fiction',vs:'Film/TV',sel:true},
+  {n:'Project Hail Mary',a:'Andy Weir',y:2021,g:'Science Fiction',vs:'Bestseller',sel:true},
+  {n:'Ready Player One',a:'Ernest Cline',y:2011,g:'Science Fiction',vs:'Film/TV',sel:false},
+  {n:"Ender's Game",a:'Orson Scott Card',y:1985,g:'Science Fiction',vs:'Film/TV',sel:false},
+  {n:'Foundation',a:'Isaac Asimov',y:1951,g:'Science Fiction',vs:'Award',sel:true},
+  {n:'Neuromancer',a:'William Gibson',y:1984,g:'Science Fiction',vs:'Award',sel:true},
+  {n:'Snow Crash',a:'Neal Stephenson',y:1992,g:'Science Fiction',vs:'Canon',sel:false},
+  {n:'Gone Girl',a:'Gillian Flynn',y:2012,g:'Thriller',vs:'Film/TV',sel:true},
+  {n:'Sharp Objects',a:'Gillian Flynn',y:2006,g:'Thriller',vs:'Film/TV',sel:false},
+  {n:'Dark Places',a:'Gillian Flynn',y:2009,g:'Thriller',vs:'Film/TV',sel:false},
+  {n:'The Girl on the Train',a:'Paula Hawkins',y:2015,g:'Thriller',vs:'Film/TV',sel:true},
+  {n:'The Silent Patient',a:'Alex Michaelides',y:2019,g:'Thriller',vs:'Bestseller',sel:true},
+  {n:'The Maidens',a:'Alex Michaelides',y:2021,g:'Thriller',vs:'Canon',sel:false},
+  {n:'Behind Closed Doors',a:'B.A. Paris',y:2016,g:'Thriller',vs:'Bestseller',sel:false},
+  {n:'The Couple Next Door',a:'Shari Lapena',y:2016,g:'Thriller',vs:'Bestseller',sel:false},
+  {n:'The Woman in the Window',a:'A.J. Finn',y:2018,g:'Thriller',vs:'Film/TV',sel:false},
+  {n:'Before I Go to Sleep',a:'S.J. Watson',y:2011,g:'Thriller',vs:'Film/TV',sel:false},
+  {n:'It Ends with Us',a:'Colleen Hoover',y:2016,g:'Romance',vs:'BookTok',sel:true},
+  {n:'It Starts with Us',a:'Colleen Hoover',y:2022,g:'Romance',vs:'BookTok',sel:true},
+  {n:'Ugly Love',a:'Colleen Hoover',y:2014,g:'Romance',vs:'BookTok',sel:false},
+  {n:'Verity',a:'Colleen Hoover',y:2018,g:'Thriller',vs:'BookTok',sel:true},
+  {n:'Reminders of Him',a:'Colleen Hoover',y:2022,g:'Romance',vs:'Canon',sel:false},
+  {n:'Nov-09',a:'Colleen Hoover',y:2015,g:'Romance',vs:'BookTok',sel:false},
+  {n:'The Seven Husbands of Evelyn Hugo',a:'Taylor Jenkins Reid',y:2017,g:'Fiction',vs:'BookTok',sel:true},
+  {n:'Daisy Jones & The Six',a:'Taylor Jenkins Reid',y:2019,g:'Fiction',vs:'Film/TV',sel:false},
+  {n:'Malibu Rising',a:'Taylor Jenkins Reid',y:2021,g:'Fiction',vs:'Bestseller',sel:false},
+  {n:'Carrie Soto Is Back',a:'Taylor Jenkins Reid',y:2022,g:'Fiction',vs:'Canon',sel:false},
+  {n:'The Song of Achilles',a:'Madeline Miller',y:2011,g:'Historical Fiction',vs:'BookTok',sel:true},
+  {n:'Circe',a:'Madeline Miller',y:2018,g:'Fantasy',vs:'Bestseller',sel:false},
+  {n:'They Both Die at the End',a:'Adam Silvera',y:2017,g:'YA',vs:'BookTok',sel:true},
+  {n:'History Is All You Left Me',a:'Adam Silvera',y:2017,g:'YA',vs:'Canon',sel:false},
+  {n:'The Inheritance Games',a:'Jennifer Lynn Barnes',y:2020,g:'YA',vs:'Bestseller',sel:true},
+  {n:'We Were Liars',a:'E. Lockhart',y:2014,g:'YA',vs:'BookTok',sel:true},
+  {n:'One of Us Is Lying',a:'Karen M. McManus',y:2017,g:'YA',vs:'BookTok',sel:true},
+  {n:"A Good Girl's Guide to Murder",a:'Holly Jackson',y:2019,g:'YA',vs:'Canon',sel:false},
+  {n:'Five Feet Apart',a:'Rachael Lippincott',y:2018,g:'YA',vs:'Film/TV',sel:false},
+  {n:'Looking for Alaska',a:'John Green',y:2005,g:'YA',vs:'Film/TV',sel:false},
+  {n:'The Fault in Our Stars',a:'John Green',y:2012,g:'YA',vs:'Film/TV',sel:true},
+  {n:'Paper Towns',a:'John Green',y:2008,g:'YA',vs:'Film/TV',sel:false},
+  {n:'Turtles All the Way Down',a:'John Green',y:2017,g:'YA',vs:'Bestseller',sel:false},
+  {n:'Eleanor & Park',a:'Rainbow Rowell',y:2012,g:'YA',vs:'Bestseller',sel:false},
+  {n:'Fangirl',a:'Rainbow Rowell',y:2013,g:'YA',vs:'Bestseller',sel:false},
+  {n:'Red Queen',a:'Victoria Aveyard',y:2015,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'Shatter Me',a:'Tahereh Mafi',y:2011,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'Legend',a:'Marie Lu',y:2011,g:'YA',vs:'Canon',sel:false},
+  {n:'The Maze Runner',a:'James Dashner',y:2009,g:'YA',vs:'Film/TV',sel:false},
+  {n:'Divergent',a:'Veronica Roth',y:2011,g:'YA',vs:'Film/TV',sel:false},
+  {n:'The Hunger Games',a:'Suzanne Collins',y:2008,g:'YA',vs:'Film/TV',sel:true},
+  {n:'Catching Fire',a:'Suzanne Collins',y:2009,g:'YA',vs:'Film/TV',sel:true},
+  {n:'Mockingjay',a:'Suzanne Collins',y:2010,g:'YA',vs:'Film/TV',sel:false},
+  {n:"Harry Potter and the Sorcerer's Stone",a:'J.K. Rowling',y:1997,g:'Fantasy',vs:'Film/TV',sel:true},
+  {n:'Chamber of Secrets',a:'J.K. Rowling',y:1998,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'Prisoner of Azkaban',a:'J.K. Rowling',y:1999,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'Goblet of Fire',a:'J.K. Rowling',y:2000,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'Order of the Phoenix',a:'J.K. Rowling',y:2003,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'Half-Blood Prince',a:'J.K. Rowling',y:2005,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'Deathly Hallows',a:'J.K. Rowling',y:2007,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'A Game of Thrones',a:'George R.R. Martin',y:1996,g:'Fantasy',vs:'Film/TV',sel:true},
+  {n:'A Clash of Kings',a:'George R.R. Martin',y:1998,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'A Storm of Swords',a:'George R.R. Martin',y:2000,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'The Hobbit',a:'J.R.R. Tolkien',y:1937,g:'Fantasy',vs:'Film/TV',sel:true},
+  {n:'The Fellowship of the Ring',a:'J.R.R. Tolkien',y:1954,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'The Two Towers',a:'J.R.R. Tolkien',y:1954,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'The Return of the King',a:'J.R.R. Tolkien',y:1955,g:'Fantasy',vs:'Film/TV',sel:false},
+  {n:'The Name of the Wind',a:'Patrick Rothfuss',y:2007,g:'Fantasy',vs:'Canon',sel:false},
+  {n:"The Wise Man's Fear",a:'Patrick Rothfuss',y:2011,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'Mistborn',a:'Brandon Sanderson',y:2006,g:'Fantasy',vs:'Award',sel:true},
+  {n:'The Way of Kings',a:'Brandon Sanderson',y:2010,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'Words of Radiance',a:'Brandon Sanderson',y:2014,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'The Atlas Six',a:'Olivie Blake',y:2020,g:'Fantasy',vs:'BookTok',sel:false},
+  {n:'The Atlas Paradox',a:'Olivie Blake',y:2022,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'Babel',a:'R.F. Kuang',y:2022,g:'Fantasy',vs:'Award',sel:true},
+  {n:'The Poppy War',a:'R.F. Kuang',y:2018,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'Yellowface',a:'R.F. Kuang',y:2023,g:'Fiction',vs:'Bestseller',sel:false},
+  {n:'Fourth Wing',a:'Rebecca Yarros',y:2023,g:'Fantasy',vs:'BookTok',sel:true},
+  {n:'Iron Flame',a:'Rebecca Yarros',y:2023,g:'Fantasy',vs:'Canon',sel:false},
+  {n:'Priory of the Orange Tree',a:'Samantha Shannon',y:2019,g:'Fantasy',vs:'Bestseller',sel:false},
+  {n:'Atomic Habits',a:'James Clear',y:2018,g:'Self-help',vs:'Canon',sel:true},
+  {n:'The Subtle Art of Not Giving a F*ck',a:'Mark Manson',y:2016,g:'Self-help',vs:'Canon',sel:true},
+  {n:'Rich Dad Poor Dad',a:'Robert Kiyosaki',y:1997,g:'Finance',vs:'Canon',sel:false},
+  {n:'Think and Grow Rich',a:'Napoleon Hill',y:1937,g:'Self-help',vs:'Canon',sel:false},
+  {n:'The 7 Habits of Highly Effective People',a:'Stephen Covey',y:1989,g:'Self-help',vs:'Canon',sel:true},
+  {n:'How to Win Friends and Influence People',a:'Dale Carnegie',y:1936,g:'Self-help',vs:'Canon',sel:false},
+  {n:'Deep Work',a:'Cal Newport',y:2016,g:'Productivity',vs:'Canon',sel:false},
+  {n:'Start With Why',a:'Simon Sinek',y:2009,g:'Business',vs:'Canon',sel:false},
+  {n:"Can't Hurt Me",a:'David Goggins',y:2018,g:'Self-help',vs:'Canon',sel:false},
+  {n:'The Power of Habit',a:'Charles Duhigg',y:2012,g:'Self-help',vs:'Canon',sel:false},
+  {n:'Thinking Fast and Slow',a:'Daniel Kahneman',y:2011,g:'Psychology',vs:'Award',sel:true},
+  {n:'Outliers',a:'Malcolm Gladwell',y:2008,g:'Non-fiction',vs:'Bestseller',sel:false},
+  {n:'Blink',a:'Malcolm Gladwell',y:2005,g:'Non-fiction',vs:'Bestseller',sel:false},
+  {n:'Grit',a:'Angela Duckworth',y:2016,g:'Psychology',vs:'Bestseller',sel:false},
+  {n:'Mindset',a:'Carol Dweck',y:2006,g:'Psychology',vs:'Bestseller',sel:false},
+  {n:'Sapiens',a:'Yuval Noah Harari',y:2011,g:'History',vs:'Bestseller',sel:false},
+  {n:'Homo Deus',a:'Yuval Noah Harari',y:2015,g:'History',vs:'Bestseller',sel:false},
+  {n:'Factfulness',a:'Hans Rosling',y:2018,g:'Non-fiction',vs:'Bestseller',sel:false},
+  {n:'Freakonomics',a:'Levitt & Dubner',y:2005,g:'Economics',vs:'Bestseller',sel:false},
+  {n:'The Psychology of Money',a:'Morgan Housel',y:2020,g:'Finance',vs:'Bestseller',sel:false},
+  {n:'Educated',a:'Tara Westover',y:2018,g:'Memoir',vs:'Award',sel:false},
+  {n:'Becoming',a:'Michelle Obama',y:2018,g:'Memoir',vs:'Bestseller',sel:false},
+  {n:'Born a Crime',a:'Trevor Noah',y:2016,g:'Memoir',vs:'Bestseller',sel:false},
+  {n:'When Breath Becomes Air',a:'Paul Kalanithi',y:2016,g:'Memoir',vs:'Bestseller',sel:false},
+  {n:'Into the Wild',a:'Jon Krakauer',y:1996,g:'Non-fiction',vs:'Film/TV',sel:false},
+  {n:'Wild',a:'Cheryl Strayed',y:2012,g:'Memoir',vs:'Film/TV',sel:false},
+  {n:'The Glass Castle',a:'Jeannette Walls',y:2005,g:'Memoir',vs:'Film/TV',sel:false},
+  {n:'Just Mercy',a:'Bryan Stevenson',y:2014,g:'Non-fiction',vs:'Film/TV',sel:false},
+  {n:'Spare',a:'Prince Harry',y:2023,g:'Memoir',vs:'Bestseller',sel:false},
+  {n:'Greenlights',a:'Matthew McConaughey',y:2020,g:'Memoir',vs:'Bestseller',sel:false},
+];
+const QUIET=b=>b.vs!=="Film/TV"&&b.vs!=="BookTok";
+const VS_C={"Film/TV":"#b8820a","BookTok":"#c0304e","Award":"#6040b8","Bestseller":"#187a4a","Canon":"#a84e12"};
+const AR_C={"Superstar":"#b8820a","Growing":"#a84e12","Established":"#2060b8"};
+const GC={"Fantasy":"#6840b8","YA":"#c0304e","Science Fiction":"#2060b8",
+  "Thriller":"#a87818","Romance":"#b03868","Fiction":"#187a60",
+  "Historical Fiction":"#187a60","Self-help":"#a84e12","Psychology":"#7a3090",
+  "Memoir":"#187a78","Non-fiction":"#406080","Finance":"#388050",
+  "History":"#806030","Productivity":"#a84e12","Business":"#388050","Economics":"#406080"};
 
-// ─── State ───────────────────────────────────────────────────────────────────
-let gameState = 'menu'; // menu | playing | gameover
-let score = 0, lives = 3, highScore = 0, combo = 0;
-let items = [], particles = [], scorePopups = [];
-let sliceTrail = [];
-let isSlicing = false;
-let animId = null, spawnTimer = null, comboTimer = null;
-let lastTime = null;
-let idCounter = 0;
-let popupIdCounter = 0;
-const itemEls = new Map();   // id → DOM element
-const particleEls = new Map();
-const popupEls = new Map();
-
-// ─── Stars ───────────────────────────────────────────────────────────────────
-for (let i = 0; i < 30; i++) {
-  const s = document.createElement('div');
-  s.className = 'star';
-  const sz = Math.random() * 2 + 1;
-  s.style.cssText = `
-    width:${sz}px; height:${sz}px;
-    opacity:${Math.random()*0.6+0.2};
-    left:${Math.random()*100}%;
-    top:${Math.random()*60}%;
-    --dur:${2+Math.random()*3}s;
-  `;
-  game.insertBefore(s, game.firstChild);
+/* tooltip */
+const tip=document.getElementById("tip");
+const tn=document.getElementById("tn"),tb=document.getElementById("tb");
+document.addEventListener("mousemove",e=>{
+  let x=e.clientX+16,y=e.clientY+12;
+  if(x+240>innerWidth)x=e.clientX-250;
+  if(y+120>innerHeight)y=e.clientY-115;
+  tip.style.left=x+"px";tip.style.top=y+"px";
+});
+function stt(e,b){
+  tn.textContent=b.n;
+  const vsCol=VS_C[b.vs]||"var(--mid)";
+  const ttpText=b.ttp===0?"peaked at release":b.ttp===null?"peak unknown":`peaked ${b.ttp} yr${b.ttp>1?"s":""} later`;
+  tb.innerHTML=`${b.a} · ${b.y}<br>${b.g}<br><span style="display:inline-block;margin-top:5px;padding:2px 8px;border-radius:3px;background:${vsCol};color:#fff;font-size:10px;letter-spacing:0.08em;font-weight:500">via ${b.vs}</span><br><span style="opacity:0.7">${ttpText}</span>`;
+  tip.classList.add("on");
 }
+function htt(){tip.classList.remove("on")}
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function rnd(a, b) { return a + Math.random() * (b - a); }
+const NS="http://www.w3.org/2000/svg";
+function mk(t,a={}){const e=document.createElementNS(NS,t);Object.entries(a).forEach(([k,v])=>e.setAttribute(k,v));return e}
+function tx(x,y,s,a={}){const e=mk("text",{x,y,...a});e.textContent=s;return e}
 
-function getDims() {
-  const r = game.getBoundingClientRect();
-  return { w: r.width, h: r.height };
-}
+/* ════════════════════════════════════════════
+   S1 — DOT GRID  (10 cols × 3 rows = 30 books)
+   All grey → click → quiet muted, loud gold
+════════════════════════════════════════════ */
+(function(){
+  const svg=document.getElementById("svg1");
+  const W=960,H=220,COLS=10,ROWS=3;
+  const PAD_L=48,PAD_R=48,PAD_T=40,PAD_B=40;
+  const gx=(W-PAD_L-PAD_R)/(COLS-1);
+  const gy=(H-PAD_T-PAD_B)/(ROWS-1);
+  const R=14;let done=false;
 
-function heartEmoji(n) {
-  let s = '';
-  for (let i = 0; i < 3; i++) s += (i < n ? '❤️' : '🖤') + (i < 2 ? ' ' : '');
-  return s;
-}
+  // quiet first, loud second — loud dots draw on top
+  const quietB=B.filter(b=>QUIET(b));
+  const loudB=B.filter(b=>!QUIET(b));
+  const ordered=[...quietB,...loudB];
+  const circles=[];
 
-// ─── Spawn ───────────────────────────────────────────────────────────────────
-function spawnItem() {
-  const { w, h } = getDims();
-  const isBomb = Math.random() < 0.12;
-  const fruit  = isBomb ? null : FRUITS[Math.floor(Math.random() * FRUITS.length)];
-  const size   = isBomb ? 52 : fruit.size;
-  const item = {
-    id: idCounter++,
-    x: rnd(size, w - size),
-    y: h + size,
-    vx: rnd(-3, 3),
-    vy: rnd(-22, -16),
-    isBomb, fruit, size,
-    rotation: 0,
-    rotSpeed: rnd(-6, 6),
-    sliced: false,
-    sliceOpacity: 1,
-    emoji: isBomb ? '💣' : fruit.emoji,
-    points: isBomb ? 0 : fruit.points,
-  };
-  items.push(item);
-
-  // Create DOM element
-  const el = document.createElement('div');
-  el.className = 'item';
-  el.style.cssText = `
-    width:${size}px; height:${size}px;
-    font-size:${size * 0.75}px;
-    left:${item.x - size/2}px;
-    top:${item.y - size/2}px;
-  `;
-  el.textContent = item.emoji;
-  game.appendChild(el);
-  itemEls.set(item.id, el);
-}
-
-// ─── Slicing ─────────────────────────────────────────────────────────────────
-function addScorePopup(pts, x, y, isCombo) {
-  const id = popupIdCounter++;
-  const popup = { id, pts, x, y, isCombo, opacity: 1, dy: 0 };
-  scorePopups.push(popup);
-
-  const el = document.createElement('div');
-  el.className = 'score-popup';
-  el.style.color = isCombo ? '#ffd93d' : 'white';
-  el.style.fontSize = (isCombo ? 28 : 20) + 'px';
-  el.style.textShadow = isCombo ? '0 0 20px #ffd93d' : '0 0 8px rgba(0,0,0,0.8)';
-  el.textContent = isCombo ? `✨+${pts}` : `+${pts}`;
-  game.appendChild(el);
-  popupEls.set(id, el);
-}
-
-function triggerSlice(item, sx, sy) {
-  if (item.sliced) return;
-  item.sliced = true;
-
-  const el = itemEls.get(item.id);
-
-  if (item.isBomb) {
-    if (el) el.style.filter = 'drop-shadow(0 0 12px #ff4444)';
-    lives = Math.max(0, lives - 1);
-    updateLives();
-    // explosion particles
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      addParticle(item.x, item.y, Math.cos(angle)*4, Math.sin(angle)*4, '💥');
-    }
-    if (lives <= 0) endGame();
-  } else {
-    if (el) {
-      el.style.filter = 'drop-shadow(0 0 10px #ffffff88) brightness(1.5)';
-      // slice line
-      const line = document.createElement('div');
-      line.className = 'slice-line';
-      el.appendChild(line);
-    }
-    combo++;
-    const pts = item.points * (combo > 1 ? combo : 1);
-    score += pts;
-    scoreVal.textContent = score;
-    addScorePopup(pts, sx, sy, combo > 1);
-
-    if (combo > 1) {
-      comboBanner.textContent = `✨ ${combo}x COMBO!`;
-      comboBanner.style.display = 'block';
-      comboBanner.style.animation = 'none';
-      void comboBanner.offsetWidth;
-      comboBanner.style.animation = 'comboFlash 0.3s ease';
-    }
-
-    if (comboTimer) clearTimeout(comboTimer);
-    comboTimer = setTimeout(() => {
-      combo = 0;
-      comboBanner.style.display = 'none';
-    }, 800);
-
-    // juice particles
-    for (let i = 0; i < 6; i++) {
-      const angle = rnd(0, Math.PI * 2);
-      addParticle(
-        item.x, item.y,
-        Math.cos(angle) * rnd(2,5),
-        Math.sin(angle) * rnd(2,5) - 2,
-        item.emoji
-      );
-    }
-  }
-}
-
-function addParticle(x, y, dx, dy, emoji) {
-  const id = idCounter++;
-  const p = { id, x, y, dx, dy, emoji, opacity: 1, scale: 0.8 };
-  particles.push(p);
-
-  const el = document.createElement('div');
-  el.className = 'particle';
-  el.textContent = emoji;
-  game.appendChild(el);
-  particleEls.set(id, el);
-}
-
-function checkSliceHit(x, y) {
-  items.forEach(item => {
-    if (item.sliced) return;
-    if (Math.hypot(item.x - x, item.y - y) < item.size * 0.55) {
-      triggerSlice(item, x, y);
-    }
+  ordered.forEach((b,i)=>{
+    const col=i%COLS,row=Math.floor(i/COLS);
+    const cx=PAD_L+col*gx,cy=PAD_T+row*gy;
+    const g=mk("g",{style:"cursor:pointer"});
+    const c=mk("circle",{cx,cy,r:R,
+      fill:"rgba(30,27,23,0.07)",
+      stroke:"rgba(30,27,23,0.16)","stroke-width":"1"});
+    c.style.transition="fill .5s,stroke .5s,r .3s,fill-opacity .5s";
+    g.appendChild(c);
+    g.addEventListener("mouseenter",e=>stt(e,b));
+    g.addEventListener("mouseleave",htt);
+    svg.appendChild(g);
+    circles.push({c,b,isQuiet:QUIET(b)});
   });
-}
 
-// ─── Input ───────────────────────────────────────────────────────────────────
-function getPos(e) {
-  const rect = game.getBoundingClientRect();
-  const src  = e.touches ? e.touches[0] : e;
-  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
-}
-
-game.addEventListener('mousedown',  e => { if (gameState !== 'playing') return; isSlicing = true; const p = getPos(e); sliceTrail = [p]; updateTrail(); });
-game.addEventListener('mousemove',  e => { if (!isSlicing || gameState !== 'playing') return; const p = getPos(e); sliceTrail = [...sliceTrail.slice(-12), p]; updateTrail(); checkSliceHit(p.x, p.y); });
-game.addEventListener('mouseup',    () => { isSlicing = false; sliceTrail = []; updateTrail(); });
-game.addEventListener('mouseleave', () => { isSlicing = false; sliceTrail = []; updateTrail(); });
-game.addEventListener('touchstart', e => { e.preventDefault(); if (gameState !== 'playing') return; isSlicing = true; const p = getPos(e); sliceTrail = [p]; updateTrail(); }, { passive: false });
-game.addEventListener('touchmove',  e => { e.preventDefault(); if (!isSlicing || gameState !== 'playing') return; const p = getPos(e); sliceTrail = [...sliceTrail.slice(-12), p]; updateTrail(); checkSliceHit(p.x, p.y); }, { passive: false });
-game.addEventListener('touchend',   () => { isSlicing = false; sliceTrail = []; updateTrail(); });
-
-function updateTrail() {
-  if (sliceTrail.length < 2) { slicePath.setAttribute('d', ''); return; }
-  const d = sliceTrail.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  slicePath.setAttribute('d', d);
-}
-
-// ─── Lives ───────────────────────────────────────────────────────────────────
-function updateLives() {
-  livesEl.textContent = heartEmoji(lives);
-}
-
-// ─── Game Loop ───────────────────────────────────────────────────────────────
-function gameLoop(ts) {
-  if (gameState !== 'playing') return;
-  if (!lastTime) lastTime = ts;
-  const dt = Math.min((ts - lastTime) / 16, 3);
-  lastTime = ts;
-
-  const { h } = getDims();
-  const gravity = 0.6;
-
-  // Update items
-  const toRemove = [];
-  items.forEach(item => {
-    item.x += item.vx * dt;
-    item.y += item.vy * dt;
-    item.vy += (item.sliced ? gravity * 1.5 : gravity) * dt;
-    item.rotation += item.rotSpeed * dt;
-    if (item.sliced) item.sliceOpacity = Math.max(0, item.sliceOpacity - 0.04 * dt);
-
-    if (item.y > h + 100) {
-      if (!item.sliced && !item.isBomb) {
-        lives = Math.max(0, lives - 1);
-        updateLives();
-        if (lives <= 0) { endGame(); return; }
+  function reveal(){
+    if(done)return;done=true;
+    document.getElementById("hint1").style.display="none";
+    const leg1=document.getElementById("leg1");
+    leg1.style.maxHeight="600px";
+    leg1.style.opacity="1";
+    leg1.style.marginTop="28px";
+    circles.forEach(({c,b,isQuiet},i)=>setTimeout(()=>{
+      if(isQuiet){
+        c.setAttribute("fill","rgba(30,27,23,0.12)");
+        c.setAttribute("stroke","rgba(30,27,23,0.22)");
+        c.setAttribute("fill-opacity","1");
+      } else {
+        c.setAttribute("fill","#b8820a");
+        c.setAttribute("stroke","#b8820a");
+        c.setAttribute("r",R+3);
+        c.setAttribute("fill-opacity","0.92");
       }
-      toRemove.push(item.id);
-      return;
-    }
-    if (item.sliced && item.sliceOpacity <= 0) { toRemove.push(item.id); return; }
+    },i*55));
+  }
+  new IntersectionObserver(en=>{
+    if(en[0].isIntersecting)setTimeout(reveal,400);
+  },{threshold:.4}).observe(svg);
+})();
 
-    const el = itemEls.get(item.id);
-    if (el) {
-      el.style.left   = (item.x - item.size/2) + 'px';
-      el.style.top    = (item.y - item.size/2) + 'px';
-      el.style.transform = `rotate(${item.rotation}deg) scale(${item.sliced ? 1.3 : 1})`;
-      el.style.opacity   = item.sliceOpacity;
-      if (!item.sliced) {
-        el.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))';
-      }
-    }
-  });
-  toRemove.forEach(id => {
-    items = items.filter(i => i.id !== id);
-    const el = itemEls.get(id);
-    if (el) { el.remove(); itemEls.delete(id); }
-  });
+/* ════════════════════════════════════════════
+   S2/S3 SHARED AXIS CONFIG
+   X: 1920–2025, 5-year ticks
+   Y: 0–80, 5-year intervals
+════════════════════════════════════════════ */
+const bsort=B.slice().sort((a,b)=>a.y-b.y);
+const X_MIN=1920,X_MAX=2025;
+/* S2 full-width canvas */
+const W2=960,H2=360;
+const PL=70,PR=24,PT=46,PB=32;
+const pW=W2-PL-PR,pH=H2-PT-PB;
+const maxT=80; /* round up from 75 for clean axis */
 
-  // Update particles
-  const deadP = [];
-  particles.forEach(p => {
-    p.x += p.dx; p.y += p.dy; p.dy += 0.3;
-    p.opacity -= 0.03; p.scale *= 0.96;
-    if (p.opacity <= 0) { deadP.push(p.id); return; }
-    const el = particleEls.get(p.id);
-    if (el) {
-      el.style.left      = p.x + 'px';
-      el.style.top       = p.y + 'px';
-      el.style.opacity   = p.opacity;
-      el.style.transform = `scale(${p.scale})`;
-    }
-  });
-  deadP.forEach(id => {
-    particles = particles.filter(p => p.id !== id);
-    const el = particleEls.get(id);
-    if (el) { el.remove(); particleEls.delete(id); }
-  });
+function xp(y){return PL+(y-X_MIN)/(X_MAX-X_MIN)*pW}
+function yp(t){return PT+(t/maxT)*pH}
 
-  // Update score popups
-  const deadPop = [];
-  scorePopups.forEach(p => {
-    p.dy -= 1.2; p.opacity -= 0.025;
-    if (p.opacity <= 0) { deadPop.push(p.id); return; }
-    const el = popupEls.get(p.id);
-    if (el) {
-      el.style.left      = p.x + 'px';
-      el.style.top       = (p.y + p.dy) + 'px';
-      el.style.opacity   = p.opacity;
-      el.style.transform = 'translate(-50%, -50%)';
-    }
-  });
-  deadPop.forEach(id => {
-    scorePopups = scorePopups.filter(p => p.id !== id);
-    const el = popupEls.get(id);
-    if (el) { el.remove(); popupEls.delete(id); }
-  });
+/* common axis drawing helper */
+function drawAxes(svg,W,pH_,light){
+  const op=light?0.25:0.42;
+  const opG=light?0.06:0.09;
 
-  animId = requestAnimationFrame(gameLoop);
-}
+  /* x axis line at top */
+  svg.appendChild(mk("line",{x1:PL,y1:PT,x2:W-PR,y2:PT,
+    stroke:`rgba(30,27,23,${op})`,"stroke-width":"1"}));
+  /* y axis line */
+  svg.appendChild(mk("line",{x1:PL,y1:PT,x2:PL,y2:PT+pH_,
+    stroke:`rgba(30,27,23,${opG*2})`,"stroke-width":"1"}));
 
-// ─── Spawn loop ──────────────────────────────────────────────────────────────
-function scheduleSpawn() {
-  if (gameState !== 'playing') return;
-  spawnItem();
-  spawnTimer = setTimeout(scheduleSpawn, rnd(600, 1400));
-}
-
-// ─── Start / End ─────────────────────────────────────────────────────────────
-function startGame() {
-  // Clear old elements
-  items.forEach(i => { const el = itemEls.get(i.id); if (el) el.remove(); });
-  particles.forEach(p => { const el = particleEls.get(p.id); if (el) el.remove(); });
-  scorePopups.forEach(p => { const el = popupEls.get(p.id); if (el) el.remove(); });
-  itemEls.clear(); particleEls.clear(); popupEls.clear();
-  items = []; particles = []; scorePopups = [];
-  sliceTrail = []; updateTrail();
-
-  score = 0; lives = 3; combo = 0;
-  scoreVal.textContent = '0';
-  updateLives();
-  comboBanner.style.display = 'none';
-
-  if (animId)    cancelAnimationFrame(animId);
-  if (spawnTimer) clearTimeout(spawnTimer);
-  if (comboTimer) clearTimeout(comboTimer);
-
-  gameState = 'playing';
-  lastTime = null;
-  menuScreen.style.display = 'none';
-  goScreen.style.display   = 'none';
-  hud.style.display        = 'flex';
-  game.style.cursor        = 'none';
-
-  spawnTimer = setTimeout(scheduleSpawn, 500);
-  animId = requestAnimationFrame(gameLoop);
-}
-
-function endGame() {
-  if (gameState === 'gameover') return;
-  gameState = 'gameover';
-  if (animId)     cancelAnimationFrame(animId);
-  if (spawnTimer) clearTimeout(spawnTimer);
-
-  document.getElementById('final-score').textContent = score;
-  if (score >= highScore && score > 0) {
-    highScore = score;
-    document.getElementById('new-best').style.display = 'block';
-    document.getElementById('best-hint').style.display = 'none';
-  } else {
-    document.getElementById('new-best').style.display = 'none';
-    if (highScore > 0) {
-      document.getElementById('best-hint').style.display = 'block';
-      document.getElementById('best-hint-val').textContent = highScore;
+  /* X ticks every 5 years */
+  for(let yr=X_MIN;yr<=X_MAX;yr+=5){
+    const x=xp(yr);
+    const isBig=yr%10===0;
+    svg.appendChild(mk("line",{x1:x,y1:PT,x2:x,y2:PT-(isBig?7:4),
+      stroke:`rgba(30,27,23,${isBig?op:op*0.5})`,"stroke-width":"1"}));
+    if(isBig){
+      svg.appendChild(tx(x,PT-12,yr,{
+        "text-anchor":"middle","font-size":"9",
+        fill:`rgba(30,27,23,${op})`,"font-family":"'DM Mono',monospace"}));
     }
   }
 
-  hud.style.display      = 'none';
-  goScreen.style.display = 'flex';
-  game.style.cursor      = 'default';
-}
-
-function showMenu() {
-  gameState = 'menu';
-  if (animId)    cancelAnimationFrame(animId);
-  if (spawnTimer) clearTimeout(spawnTimer);
-
-  items.forEach(i => { const el = itemEls.get(i.id); if (el) el.remove(); });
-  particles.forEach(p => { const el = particleEls.get(p.id); if (el) el.remove(); });
-  scorePopups.forEach(p => { const el = popupEls.get(p.id); if (el) el.remove(); });
-  itemEls.clear(); particleEls.clear(); popupEls.clear();
-  items = []; particles = []; scorePopups = [];
-
-  if (highScore > 0) {
-    document.getElementById('highscore-badge').style.display = 'block';
-    document.getElementById('hs-value').textContent = highScore;
+  /* Y ticks every 5 years */
+  for(let v=0;v<=maxT;v+=5){
+    const y=yp(v);
+    const isBig=v%10===0;
+    svg.appendChild(mk("line",{x1:PL-(isBig?6:3),y1:y,x2:PL,y2:y,
+      stroke:`rgba(30,27,23,${isBig?op:op*0.5})`,"stroke-width":"1"}));
+    if(isBig||v===5||v===15||v===25||v===35||v===45||v===55||v===65||v===75){
+      svg.appendChild(tx(PL-9,y+3.5,v,{
+        "text-anchor":"end","font-size":isBig?"9":"8",
+        fill:`rgba(30,27,23,${isBig?op:op*0.6})`,"font-family":"'DM Mono',monospace"}));
+    }
+    /* horizontal gridline */
+    if(v>0){
+      svg.appendChild(mk("line",{x1:PL,y1:y,x2:W-PR,y2:y,
+        stroke:`rgba(30,27,23,${opG})`,"stroke-width":"1","stroke-dasharray":"3 5"}));
+    }
   }
 
-  hud.style.display        = 'none';
-  goScreen.style.display   = 'none';
-  menuScreen.style.display = 'flex';
-  game.style.cursor        = 'default';
+  /* axis labels */
+  svg.appendChild(tx(PL+pW/2,PT-30,"publication year",{
+    "text-anchor":"middle","font-size":"9",
+    fill:`rgba(30,27,23,${op*0.7})`,"font-family":"'DM Mono',monospace","letter-spacing":"0.12em"}));
+  const yl=tx(16,PT+pH_/2,"years to peak",{
+    "text-anchor":"middle","font-size":"9",
+    fill:`rgba(30,27,23,${op*0.7})`,"font-family":"'DM Mono',monospace",
+    transform:`rotate(-90,16,${PT+pH_/2})`});
+  svg.appendChild(yl);
 }
 
-// ─── Button listeners ────────────────────────────────────────────────────────
-document.getElementById('btn-play').addEventListener('click', startGame);
-document.getElementById('btn-retry').addEventListener('click', startGame);
-document.getElementById('btn-menu').addEventListener('click', showMenu);
+/* ════════════════════════════════════════════
+   S2 BUILD
+════════════════════════════════════════════ */
+let s2state=1,s2dots=[];
+(function(){
+  const svg=document.getElementById("svg2");
+  drawAxes(svg,W2,pH,false);
+
+  bsort.forEach((b,i)=>{
+    if(b.ttp===null)return;
+    const cx=xp(b.y),cyTop=PT,cyBot=yp(b.ttp);
+    const col="#b8820a";
+    const r=7;
+    const ln=mk("line",{x1:cx,y1:cyTop,x2:cx,y2:cyTop,
+      stroke:col,"stroke-width":"1.5","stroke-opacity":"0.5"});
+    svg.appendChild(ln);
+    const d=mk("circle",{cx,cy:cyTop,r,
+      fill:col,"fill-opacity":"0.88",stroke:"none"});
+    d.style.transition=`cy 1.4s cubic-bezier(.2,0,.05,1) ${i*.06}s`;
+    d.addEventListener("mouseenter",e=>stt(e,b));
+    d.addEventListener("mouseleave",htt);
+    svg.appendChild(d);
+    s2dots.push({d,ln,cx,cyTop,cyBot});
+  });
+})();
+
+window.s2go=function(step){
+  s2state=step;
+  document.getElementById("b2a").classList.toggle("on",step===1);
+  document.getElementById("b2b").classList.toggle("on",step===2);
+  s2dots.forEach(({d,ln,cyTop,cyBot},i)=>{
+    const t=step===2?cyBot:cyTop;
+    d.setAttribute("cy",t);
+    if(step===2)setTimeout(()=>ln.setAttribute("y2",cyBot),i*60+200);
+    else ln.setAttribute("y2",cyTop);
+  });
+};
+
+new IntersectionObserver(en=>{
+  if(en[0].isIntersecting&&s2state===1)setTimeout(()=>s2go(2),600);
+},{threshold:.4}).observe(document.getElementById("s2"));
+
+/* ════════════════════════════════════════════
+   S3 BUILD  (full width, same canvas as S2)
+════════════════════════════════════════════ */
+let s3els=[];
+(function(){
+  const svg=document.getElementById("svg3");
+
+  /* axes — same scale as S2, light opacity */
+  svg.appendChild(mk("line",{x1:PL,y1:PT,x2:W2-PR,y2:PT,
+    stroke:"rgba(30,27,23,0.2)","stroke-width":"1"}));
+  svg.appendChild(mk("line",{x1:PL,y1:PT,x2:PL,y2:PT+pH,
+    stroke:"rgba(30,27,23,0.08)","stroke-width":"1"}));
+
+  for(let yr=X_MIN;yr<=X_MAX;yr+=5){
+    const x=xp(yr),isBig=yr%10===0;
+    svg.appendChild(mk("line",{x1:x,y1:PT,x2:x,y2:PT-(isBig?7:4),
+      stroke:`rgba(30,27,23,${isBig?.22:.1})`,"stroke-width":"1"}));
+    if(isBig)svg.appendChild(tx(x,PT-12,yr,{
+      "text-anchor":"middle","font-size":"9",
+      fill:"rgba(30,27,23,0.35)","font-family":"'DM Mono',monospace"}));
+  }
+
+  for(let v=0;v<=maxT;v+=5){
+    const y=yp(v);
+    const isBig=v%10===0;
+    if(v===0||isBig||v%5===0){
+      svg.appendChild(mk("line",{x1:PL-(isBig?6:3),y1:y,x2:PL,y2:y,
+        stroke:`rgba(30,27,23,${isBig?.22:.1})`,"stroke-width":"1"}));
+      svg.appendChild(tx(PL-9,y+3.5,v,{
+        "text-anchor":"end","font-size":isBig?"9":"8",
+        fill:`rgba(30,27,23,${isBig?.35:.22})`,"font-family":"'DM Mono',monospace"}));
+    }
+    if(v>0)svg.appendChild(mk("line",{x1:PL,y1:y,x2:W2-PR,y2:y,
+      stroke:"rgba(30,27,23,0.05)","stroke-width":"1","stroke-dasharray":"3 5"}));
+  }
+
+  /* axis labels */
+  svg.appendChild(tx(PL+pW/2,PT-30,"publication year",{
+    "text-anchor":"middle","font-size":"9",
+    fill:"rgba(30,27,23,0.28)","font-family":"'DM Mono',monospace","letter-spacing":"0.12em"}));
+  svg.appendChild(tx(16,PT+pH/2,"years to peak",{
+    "text-anchor":"middle","font-size":"9",
+    fill:"rgba(30,27,23,0.28)","font-family":"'DM Mono',monospace",
+    transform:`rotate(-90,16,${PT+pH/2})`}));
+
+  const jitterCount={};
+  bsort.forEach((b,i)=>{
+    const cx=xp(b.y);
+    const hasLine=b.ttp!==null;
+    const cyBot=hasLine?yp(b.ttp):PT;
+    let cy=cyBot;
+    if(!hasLine){
+      const key=Math.round(cx);
+      jitterCount[key]=(jitterCount[key]||0)+1;
+      cy=PT+(jitterCount[key]-1)*15;
+    }
+    const ln=mk("line",{x1:cx,y1:PT,x2:cx,y2:hasLine?cyBot:PT,
+      stroke:"#b8820a","stroke-width":"1.5","stroke-opacity":hasLine?"0.45":"0"});
+    ln.style.transition="stroke .4s";
+    svg.appendChild(ln);
+    const d=mk("circle",{cx,cy,r:hasLine?6.5:5,
+      fill:"#b8820a","fill-opacity":hasLine?"0.88":"0.55",stroke:"none"});
+    d.style.transition="fill .4s,fill-opacity .4s,r .4s";
+    d.addEventListener("mouseenter",e=>stt(e,b));
+    d.addEventListener("mouseleave",htt);
+    svg.appendChild(d);
+    s3els.push({d,ln,b,hasLine});
+  });
+})();
+
+const INS3=[
+  {h:"Different forces create different paths to popularity.",b:"No two books took the same road — but the roads are fewer than you'd think."},
+  {h:"Films and BookTok dominate the long waiters.",b:"Award, Bestseller, and Canon books cluster at the top — they were already visible. Film/TV and BookTok rescued the ones that had to wait."},
+  {h:"Superstar authors defy the wait.",b:"Books by Rowling, Collins, and Hoover peak fast — the author's brand does the work before the book even launches."},
+];
+window.s3go=function(l){
+  ["b3a","b3b","b3c"].forEach((id,i)=>document.getElementById(id).classList.toggle("on",i===l));
+  document.getElementById("leg3a").style.visibility=l===1?"visible":"hidden";
+  document.getElementById("leg3b").style.visibility=l===2?"visible":"hidden";
+  const ins=INS3[l];
+  document.getElementById("ins3").innerHTML=`<strong>"${ins.h}"</strong> ${ins.b}`;
+  s3els.forEach(({d,ln,b,hasLine})=>{
+    const col=l===0?"#b8820a":l===1?(VS_C[b.vs]||"#888"):(AR_C[b.ar]||"#888");
+    d.setAttribute("fill",col);
+    d.setAttribute("fill-opacity",hasLine?"0.88":"0.55");
+    d.setAttribute("r",hasLine?"6.5":"5");
+    ln.setAttribute("stroke",col);
+    ln.setAttribute("stroke-opacity",hasLine?"0.42":"0");
+  });
+};
+
+/* ════════════════════════════════════════════
+   S4 — TRADITIONAL vs CULTURAL GENRE BARS
+════════════════════════════════════════════ */
+(function(){
+  const svg=document.getElementById("svg4");
+  const W=960,H=420;
+  const HALF=W/2, PAD=48, MID_GAP=90;
+  const BAR_MAX_W=360, PT=80, PB=40, ROW_H=32;
+
+  const trad=B.filter(b=>QUIET(b));
+  const cult=B.filter(b=>!QUIET(b));
+
+  function genreCounts(books){
+    const c={};
+    books.forEach(b=>c[b.g]=(c[b.g]||0)+1);
+    return c;
+  }
+  const tradC=genreCounts(trad);
+  const cultC=genreCounts(cult);
+
+  // Historical Fiction and Fiction are literary genres — move them to Traditional side
+  ["Historical Fiction","Fiction"].forEach(g=>{
+    if(cultC[g]){
+      tradC[g]=(tradC[g]||0)+cultC[g];
+      delete cultC[g];
+    }
+  });
+
+  const allGenres=[...new Set([...Object.keys(tradC),...Object.keys(cultC)])];
+  allGenres.sort((a,b)=>((tradC[b]||0)+(cultC[b]||0))-((tradC[a]||0)+(cultC[a]||0)));
+
+  const maxCount=Math.max(...allGenres.map(g=>Math.max(tradC[g]||0,cultC[g]||0)));
+
+  const shortG={"Science Fiction":"Sci-Fi","Historical Fiction":"Hist. Fic",
+    "Non-fiction":"Non-fic","Psychology":"Psych.","Self-help":"Self-help"};
+
+  // Column headers
+  function header(cx,title,sub){
+    svg.appendChild(tx(cx,26,title,{"text-anchor":"middle",
+      "font-family":"'Source Serif 4',serif","font-size":"15","font-weight":"400",
+      fill:"rgba(30,27,23,0.72)"}));
+    svg.appendChild(tx(cx,44,sub,{"text-anchor":"middle",
+      "font-family":"'DM Mono',monospace","font-size":"8","letter-spacing":"0.14em",
+      fill:"rgba(30,27,23,0.32)"}));
+  }
+  header(HALF/2,"Traditional","AWARD  ·  BESTSELLER  ·  CANON");
+  header(HALF+HALF/2,"Cultural","FILM / TV  ·  BOOKTOK");
+
+  // Divider
+  svg.appendChild(mk("line",{x1:HALF,y1:56,x2:HALF,y2:H-PB,
+    stroke:"rgba(30,27,23,0.08)","stroke-width":"1","stroke-dasharray":"4 6"}));
+
+  const tAxisX=HALF-MID_GAP/2;
+  const cAxisX=HALF+MID_GAP/2;
+
+  // Store all animated bars
+  const bars=[];
+
+  allGenres.forEach((g,i)=>{
+    const y=PT+i*ROW_H;
+    const col=GC[g]||"#888";
+    const lbl=shortG[g]||g;
+
+    const tCount=tradC[g]||0;
+    const tTargetW=(tCount/maxCount)*BAR_MAX_W;
+
+    const cCount=cultC[g]||0;
+    const cTargetW=(cCount/maxCount)*BAR_MAX_W;
+
+    const barH=ROW_H*.65;
+    const barY=y-barH/2;
+
+    // Traditional bar (grows LEFT from tAxisX)
+    if(tCount>0){
+      const rect=mk("rect",{x:tAxisX,y:barY,width:0,height:barH,
+        fill:col,"fill-opacity":"0.75",rx:"2"});
+      rect.style.transition=`width 1.1s cubic-bezier(.2,0,.1,1) ${i*.12}s, x 1.1s cubic-bezier(.2,0,.1,1) ${i*.12}s`;
+      svg.appendChild(rect);
+      const num=tx(tAxisX-tTargetW-8,y+1,tCount,{"text-anchor":"end",
+        "font-size":"11","font-family":"'DM Mono',monospace",
+        fill:col,"font-weight":"400","opacity":"0"});
+      num.style.transition=`opacity .4s ease ${.9+i*.12}s`;
+      svg.appendChild(num);
+      bars.push({rect,num,side:"left",targetW:tTargetW,axisX:tAxisX,delay:i*.12});
+    }
+
+    // Cultural bar (grows RIGHT from cAxisX)
+    if(cCount>0){
+      const rect=mk("rect",{x:cAxisX,y:barY,width:0,height:barH,
+        fill:col,"fill-opacity":"0.75",rx:"2"});
+      rect.style.transition=`width 1.1s cubic-bezier(.2,0,.1,1) ${i*.12}s`;
+      svg.appendChild(rect);
+      const num=tx(cAxisX+cTargetW+8,y+1,cCount,{"text-anchor":"start",
+        "font-size":"11","font-family":"'DM Mono',monospace",
+        fill:col,"font-weight":"400","opacity":"0"});
+      num.style.transition=`opacity .4s ease ${.9+i*.12}s`;
+      svg.appendChild(num);
+      bars.push({rect,num,side:"right",targetW:cTargetW,axisX:cAxisX,delay:i*.12});
+    }
+
+    // Genre label — once in center
+    svg.appendChild(tx(HALF,y+1,lbl,{"text-anchor":"middle",
+      "font-size":"9","font-family":"'DM Mono',monospace",
+      fill:"rgba(30,27,23,0.45)"}));
+
+    // Row separator
+    svg.appendChild(mk("line",{x1:PAD,y1:y+ROW_H/2,x2:W-PAD,y2:y+ROW_H/2,
+      stroke:"rgba(30,27,23,0.04)","stroke-width":"1"}));
+  });
+
+  // Book count totals
+  svg.appendChild(tx(HALF/2,H-12,`${trad.length} books`,{"text-anchor":"middle",
+    "font-size":"8","letter-spacing":"0.1em","font-family":"'DM Mono',monospace",
+    fill:"rgba(30,27,23,0.28)"}));
+  svg.appendChild(tx(HALF+HALF/2,H-12,`${cult.length} books`,{"text-anchor":"middle",
+    "font-size":"8","letter-spacing":"0.1em","font-family":"'DM Mono',monospace",
+    fill:"rgba(30,27,23,0.28)"}));
+
+  // Animate on scroll into view
+  let animated=false;
+  new IntersectionObserver(en=>{
+    if(en[0].isIntersecting&&!animated){
+      animated=true;
+      bars.forEach(({rect,num,side,targetW,axisX})=>{
+        if(side==="left"){
+          rect.setAttribute("x",axisX-targetW);
+          rect.setAttribute("width",targetW);
+        } else {
+          rect.setAttribute("width",targetW);
+        }
+        num.setAttribute("opacity","1");
+      });
+    }
+  },{threshold:.3}).observe(svg);
+})();
+
+/* ════════════════════════════════════════════
+   FADE IN ON SCROLL
+════════════════════════════════════════════ */
+document.querySelectorAll(".ins,.leg,.bd,.btns,.chint,.graph-block").forEach(el=>{
+  if(el.id==="ins1"||el.id==="leg1"||el.id==="leg3a"||el.id==="leg3b")return;
+  if(el.id==="ins1"||el.id==="leg1"||el.id==="leg3a"||el.id==="leg3b")return;
+  el.style.opacity="0";
+  el.style.transform="translateY(14px)";
+  el.style.transition="opacity .7s ease,transform .7s ease";
+  new IntersectionObserver(en=>{
+    if(en[0].isIntersecting){el.style.opacity="1";el.style.transform="translateY(0)"}
+  },{threshold:.12}).observe(el);
+});
 </script>
 </body>
 </html>

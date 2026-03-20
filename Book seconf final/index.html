@@ -261,7 +261,7 @@ h2 em{font-style:italic;color:var(--mid)}
 
   <div class="graph-block">
     <div class="vt">30 books</div>
-    <svg id="svg1" class="viz" viewBox="0 0 960 160"></svg>
+    <svg id="svg1" class="viz" viewBox="0 0 960 220"></svg>
     <div id="hint1" style="display:none"></div>
     <div id="leg1" style="max-height:0;overflow:hidden;opacity:0;margin-top:0;transition:max-height .6s ease,opacity .5s ease,margin-top .4s ease">
       <div style="display:flex;align-items:stretch;gap:0;margin-bottom:20px">
@@ -599,90 +599,58 @@ function mk(t,a={}){const e=document.createElementNS(NS,t);Object.entries(a).for
 function tx(x,y,s,a={}){const e=mk("text",{x,y,...a});e.textContent=s;return e}
 
 /* ════════════════════════════════════════════
-   S1 — BOOK SHELF  (30 book spines in a row)
-   All neutral → scroll → 19 turn gold
+   S1 — DOT GRID  (10 cols × 3 rows = 30 books)
+   All grey → click → quiet muted, loud gold
 ════════════════════════════════════════════ */
 (function(){
   const svg=document.getElementById("svg1");
-  const W=960,H=160;
-  const SHELF_Y=H-18; // shelf line y
-  const PAD=24;
-  const TOTAL=30;
-  const SLOT=(W-PAD*2)/TOTAL;
-  const BOOK_W=SLOT*0.72;
-  const GAP=(SLOT-BOOK_W)/2;
-  let done=false;
+  const W=960,H=220,COLS=10,ROWS=3;
+  const PAD_L=48,PAD_R=48,PAD_T=40,PAD_B=40;
+  const gx=(W-PAD_L-PAD_R)/(COLS-1);
+  const gy=(H-PAD_T-PAD_B)/(ROWS-1);
+  const R=14;let done=false;
 
-  // subtle shelf line
-  svg.appendChild(mk("rect",{x:PAD-8,y:SHELF_Y,width:W-PAD*2+16,height:6,
-    fill:"rgba(30,27,23,0.09)",rx:"2"}));
-
-  // loud (gold) first on left, quiet (grey) on right — matching the bar below
-  const loudB=B.filter(b=>!QUIET(b));
+  // quiet first, loud second — loud dots draw on top
   const quietB=B.filter(b=>QUIET(b));
-  const ordered=[...loudB,...quietB];
-
-  // Vary book heights slightly for realism
-  const heights=[110,98,116,104,122,96,112,100,118,108,
-                  114,102,120,98,110,106,116,100,112,104,
-                  118,96,108,114,102,120,98,116,104,110];
-
-  const books=[];
+  const loudB=B.filter(b=>!QUIET(b));
+  const ordered=[...quietB,...loudB];
+  const circles=[];
 
   ordered.forEach((b,i)=>{
-    const x=PAD+i*SLOT+GAP;
-    const bh=heights[i%heights.length];
-    const y=SHELF_Y-bh;
-
+    const col=i%COLS,row=Math.floor(i/COLS);
+    const cx=PAD_L+col*gx,cy=PAD_T+row*gy;
     const g=mk("g",{style:"cursor:pointer"});
-
-    // book body
-    const rect=mk("rect",{x,y,width:BOOK_W,height:bh,
-      fill:"rgba(30,27,23,0.08)",
-      stroke:"rgba(30,27,23,0.13)","stroke-width":"0.5",rx:"1"});
-    rect.style.transition="fill .6s ease, stroke .6s ease";
-    g.appendChild(rect);
-
-    // subtle spine line (decoration)
-    const spineX=x+BOOK_W*0.18;
-    const spine=mk("line",{x1:spineX,y1:y+6,x2:spineX,y2:y+bh-6,
-      stroke:"rgba(30,27,23,0.07)","stroke-width":"0.5"});
-    spine.style.transition="stroke .6s ease";
-    g.appendChild(spine);
-
-    // tiny top edge highlight
-    const top=mk("rect",{x:x+1,y:y,width:BOOK_W-2,height:2,
-      fill:"rgba(30,27,23,0.05)",rx:"1"});
-    top.style.transition="fill .6s ease";
-    g.appendChild(top);
-
+    const c=mk("circle",{cx,cy,r:R,
+      fill:"rgba(30,27,23,0.07)",
+      stroke:"rgba(30,27,23,0.16)","stroke-width":"1"});
+    c.style.transition="fill .5s,stroke .5s,r .3s,fill-opacity .5s";
+    g.appendChild(c);
     g.addEventListener("mouseenter",e=>stt(e,b));
     g.addEventListener("mouseleave",htt);
     svg.appendChild(g);
-    books.push({rect,spine,top,b,isQuiet:QUIET(b),bh,x,y});
+    circles.push({c,b,isQuiet:QUIET(b)});
   });
 
   function reveal(){
     if(done)return;done=true;
+    document.getElementById("hint1").style.display="none";
     const leg1=document.getElementById("leg1");
     leg1.style.maxHeight="600px";
     leg1.style.opacity="1";
     leg1.style.marginTop="28px";
-
-    books.forEach(({rect,spine,top,b,isQuiet},i)=>setTimeout(()=>{
+    circles.forEach(({c,b,isQuiet},i)=>setTimeout(()=>{
       if(isQuiet){
-        rect.setAttribute("fill","rgba(30,27,23,0.13)");
-        rect.setAttribute("stroke","rgba(30,27,23,0.2)");
-        spine.setAttribute("stroke","rgba(30,27,23,0.1)");
+        c.setAttribute("fill","rgba(30,27,23,0.12)");
+        c.setAttribute("stroke","rgba(30,27,23,0.22)");
+        c.setAttribute("fill-opacity","1");
       } else {
-        rect.setAttribute("fill","#b8820a");
-        rect.setAttribute("stroke","#a07008");
-        spine.setAttribute("stroke","rgba(255,255,255,0.2)");
-        top.setAttribute("fill","rgba(255,255,255,0.15)");
+        c.setAttribute("fill","#b8820a");
+        c.setAttribute("stroke","#b8820a");
+        c.setAttribute("r",R+3);
+        c.setAttribute("fill-opacity","0.92");
       }
-    },i*60));
+    },i*55));
   }
-
   new IntersectionObserver(en=>{
     if(en[0].isIntersecting)setTimeout(reveal,400);
   },{threshold:.4}).observe(svg);
